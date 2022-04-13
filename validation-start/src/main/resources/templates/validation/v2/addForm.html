@@ -1,5 +1,10 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
+<style>
+    .field-error {
+        color: red;
+    }
+</style>
 <head>
     <meta charset="utf-8">
     <link th:href="@{/css/bootstrap.min.css}"
@@ -19,9 +24,22 @@
     </div>
 
     <form action="item.html" th:action th:object="${item}" method="post">
+
+        <!--BindingRequest에 글로벌에러(ObjectError가 존재하면 랜더링된다-->
+        <div th:if="${#fields.hasGlobalErrors()}">
+            <!--글로벌 에러가 여러개인경우-->
+            <p class="field-error" th:each="err : ${#fields.globalErrors()}" th:text="${err}">전체 오류 메시지</p>
+        </div>
+
         <div>
             <label for="itemName" th:text="#{label.item.itemName}">상품명</label>
-            <input type="text" id="itemName" th:field="*{itemName}" class="form-control" placeholder="이름을 입력하세요">
+            <input type="text" id="itemName" th:field="*{itemName}"
+                   th:errorclass="field-error" class="form-control" placeholder="이름을 입력하세요">
+
+            <!--BindingRequest에 th:field="*{itemName} 에서 정의한 itemName 필드로 에러가 존재하는 경우 아래 태그가 랜더링된다-->
+            <div class="field-error" th:errors="*{itemName}">
+                상품명 오류
+            </div>
         </div>
         <div>
             <label for="price" th:text="#{label.item.price}">가격</label>
