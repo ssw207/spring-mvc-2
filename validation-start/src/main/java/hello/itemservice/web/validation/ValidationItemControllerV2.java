@@ -71,7 +71,7 @@ public class ValidationItemControllerV2 {
         return "redirect:/validation/v2/items/{itemId}";
     }
 
-    @PostMapping("/add")
+    //@PostMapping("/add")
     public String addItemV2(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
 
         if (!StringUtils.hasText(item.getItemName())) {
@@ -88,6 +88,41 @@ public class ValidationItemControllerV2 {
             if (resultPrice <= 100000) {
                 //글로벌 에러는 ObjectError 객체로 세팅
                 bindingResult.addError(new ObjectError("item", null, null, "가격 * 수량의 합은 10000원 이상어햐 합니다 현재값="+resultPrice));
+            }
+        }
+
+        //검증 실패시 처리
+        if (bindingResult.hasErrors()) {
+            //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
+            log.info("error={} ", bindingResult);
+            return "validation/v2/addForm";
+        }
+
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+    @PostMapping("/add")
+    public String addItemV3(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+
+        if (!StringUtils.hasText(item.getItemName())) {
+            //bindingFailure : 바인딩 실패 여부
+            //codes : properties 파일의 key
+            bindingResult.addError(new FieldError("item", "itemName", item.getItemName(), false, new String[] {"required.item.itemName"}, null, null));
+
+        }
+
+        if (item.getPrice() == null || item.getPrice() != null && (item.getPrice() < 1000 || item.getPrice() > 100000)) {
+            bindingResult.addError(new FieldError("item", "price", item.getPrice(), false, new String[] {"range.item.price"}, new Object[] {1000, 100000}, null));
+        }
+
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice <= 100000) {
+                //글로벌 에러는 ObjectError 객체로 세팅
+                bindingResult.addError(new ObjectError("item", new String[] {"totalPriceMin"}, new Object[]{10000, resultPrice}, null));
             }
         }
 
