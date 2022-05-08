@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -22,6 +23,7 @@ import java.util.List;
 public class ValidationItemControllerV2 {
 
     private final ItemRepository itemRepository;
+    private final ItemValidator itemValidator;
 
     @GetMapping
     public String items(Model model) {
@@ -139,17 +141,22 @@ public class ValidationItemControllerV2 {
         return "redirect:/validation/v2/items/{itemId}";
     }
 
-    @PostMapping("/add")
+    //@PostMapping("/add")
     public String addItemV4(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
 
         log.info("objectName={}", bindingResult.getObjectName());
         log.info("target={}",bindingResult.getTarget());
 
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult ,"itemName", "required");
+
+        /*
         if (!StringUtils.hasText(item.getItemName())) {
             // objectName은 이미 알고있다
             // 먼저 required.item.itemName을 가져온다. 없으면 이름인 required 인 값을 찾는다.
+            // message codes resolver
             bindingResult.rejectValue("itemName", "required");
         }
+         */
 
         if (item.getPrice() == null || item.getPrice() != null && (item.getPrice() < 1000 || item.getPrice() > 100000)) {
             bindingResult.rejectValue("price", "range", new Object[] {1000, 100000}, null);
@@ -162,6 +169,23 @@ public class ValidationItemControllerV2 {
                 bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
             }
         }
+
+        //검증 실패시 처리
+        if (bindingResult.hasErrors()) {
+            //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
+            log.info("error={} ", bindingResult);
+            return "validation/v2/addForm";
+        }
+
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+    public String addItemV5(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+
+        itemValidator.validate(item, bindingResult);
 
         //검증 실패시 처리
         if (bindingResult.hasErrors()) {
