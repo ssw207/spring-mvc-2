@@ -4,17 +4,14 @@ import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import hello.itemservice.domain.item.SaveCheck;
 import hello.itemservice.domain.item.UpdateCheck;
+import hello.itemservice.web.validation.item.ItemSaveForm;
+import hello.itemservice.web.validation.item.ItemUpdateForm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -22,9 +19,9 @@ import java.util.List;
 
 @Slf4j
 @Controller
-@RequestMapping("/validation/v3/items")
+@RequestMapping("/validation/v4/items")
 @RequiredArgsConstructor
-public class ValidationItemControllerV3 {
+public class ValidationItemControllerV4 {
 
     private final ItemRepository itemRepository;
 
@@ -32,20 +29,20 @@ public class ValidationItemControllerV3 {
     public String items(Model model) {
         List<Item> items = itemRepository.findAll();
         model.addAttribute("items", items);
-        return "validation/v3/items";
+        return "validation/v4/items";
     }
 
     @GetMapping("/{itemId}")
     public String item(@PathVariable long itemId, Model model) {
         Item item = itemRepository.findById(itemId);
         model.addAttribute("item", item);
-        return "validation/v3/item";
+        return "validation/v4/item";
     }
 
     @GetMapping("/add")
     public String addForm(Model model) {
         model.addAttribute("item", new Item());
-        return "validation/v3/addForm";
+        return "validation/v4/addForm";
     }
 
     /*
@@ -76,23 +73,24 @@ public class ValidationItemControllerV3 {
         if (bindingResult.hasErrors()) {
             //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
             log.info("error={} ", bindingResult);
-            return "validation/v3/addForm";
+            return "validation/v4/addForm";
         }
 
         Item savedItem = itemRepository.save(item);
         redirectAttributes.addAttribute("itemId", savedItem.getId());
         redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
+        return "redirect:/validation/v4/items/{itemId}";
     }
 
     /*
     @Validated(SaveCheck.class) : Validated 적용시 SaveCheck가 표시된 필드만 동작한다
+    @ModelAttribute("item") : 모델명을 item으로 남기려면 이름을 정해야함. model.addAttribute("item", form)
      */
     @PostMapping("/add")
-    public String addItemV2 (@Validated(SaveCheck.class) @ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+    public String addItemV2 (@Validated @ModelAttribute("item") ItemSaveForm form, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
 
-        if (item.getPrice() != null && item.getQuantity() != null) {
-            int resultPrice = item.getPrice() * item.getQuantity();
+        if (form.getPrice() != null && form.getQuantity() != null) {
+            int resultPrice = form.getPrice() * form.getQuantity();
             if (resultPrice <= 100000) {
                 //글로벌 에러는 ObjectError 객체로 세팅
                 bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
@@ -103,13 +101,13 @@ public class ValidationItemControllerV3 {
         if (bindingResult.hasErrors()) {
             //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
             log.info("error={} ", bindingResult);
-            return "validation/v3/addForm";
+            return "validation/v4/addForm";
         }
 
-        Item savedItem = itemRepository.save(item);
+        Item savedItem = itemRepository.save(form.toEntity());
         redirectAttributes.addAttribute("itemId", savedItem.getId());
         redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v3/items/{itemId}";
+        return "redirect:/validation/v4/items/{itemId}";
     }
 
     //@GetMapping("/{itemId}/edit")
@@ -127,18 +125,23 @@ public class ValidationItemControllerV3 {
         if (bindingResult.hasErrors()) {
             //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
             log.info("error={} ", bindingResult);
-            return "validation/v3/addForm";
+            return "validation/v4/addForm";
         }
 
         model.addAttribute("item", itemRepository.findById(itemId));
-        return "validation/v3/editForm";
+        return "validation/v4/editForm";
     }
 
     @GetMapping("/{itemId}/edit")
-    public String editFormV2(@PathVariable Long itemId, @Validated(UpdateCheck.class) @ModelAttribute Item item, BindingResult bindingResult, Model model) {
+    public String editFormV2(@PathVariable Long itemId, Model model) {
+        model.addAttribute("item", itemRepository.findById(itemId));
+        return "validation/v4/editForm";
+    }
 
-        if (item.getPrice() != null && item.getQuantity() != null) {
-            int resultPrice = item.getPrice() * item.getQuantity();
+    @PostMapping("/{itemId}/edit")
+    public String edit(@PathVariable Long itemId, @Validated @ModelAttribute("item") ItemUpdateForm form, BindingResult bindingResult) {
+        if (form.getPrice() != null && form.getQuantity() != null) {
+            int resultPrice = form.getPrice() * form.getQuantity();
             if (resultPrice <= 100000) {
                 //글로벌 에러는 ObjectError 객체로 세팅
                 bindingResult.reject("totalPriceMin", new Object[]{10000, resultPrice}, null);
@@ -149,17 +152,11 @@ public class ValidationItemControllerV3 {
         if (bindingResult.hasErrors()) {
             //bindingResult는 자동으로 모델에 담기기 때문에 모델에 따로 담을 필요없다.
             log.info("error={} ", bindingResult);
-            return "validation/v3/addForm";
+            return "validation/v4/addForm";
         }
 
-        model.addAttribute("item", itemRepository.findById(itemId));
-        return "validation/v3/editForm";
-    }
-
-    @PostMapping("/{itemId}/edit")
-    public String edit(@PathVariable Long itemId, @ModelAttribute Item item) {
-        itemRepository.update(itemId, item);
-        return "redirect:/validation/v3/items/{itemId}";
+        itemRepository.update(itemId, form.toEntity());
+        return "redirect:/validation/v4/items/{itemId}";
     }
 
 }
