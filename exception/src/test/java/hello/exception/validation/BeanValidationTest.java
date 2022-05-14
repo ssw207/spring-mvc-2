@@ -1,6 +1,6 @@
-package hello.itemservice.validation;
+package hello.exception.validation;
 
-import hello.itemservice.domain.item.Item;
+import hello.exception.domain.item.Item;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ConstraintViolation;

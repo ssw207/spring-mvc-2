@@ -1,11 +1,11 @@
-package hello.itemservice.domain.item;
+package hello.exception.domain.item;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ItemRepositoryTest {
 
