@@ -19,21 +19,20 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
     public boolean supportsParameter(MethodParameter parameter) {
         log.info("supportsParameter 실행");
 
-        boolean hasLoginAnnotation = parameter.hasParameterAnnotation(Login.class);
-        boolean hasMemberType = Member.class.isAssignableFrom(parameter.getParameterType());
+        boolean hasParameterAnnotation = parameter.hasParameterAnnotation(Login.class); // 컨트롤러 호출전  파라미터에 어노테이션이 있느지 확인
+        boolean hasMemberType = Member.class.isAssignableFrom(parameter.getParameterType()); // 타입을 체크
 
-        return hasLoginAnnotation && hasMemberType;
+        return hasParameterAnnotation && hasMemberType;
     }
 
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        log.info("resolveArgument");
 
-        log.info("resolveArgument 실행");
-
-        HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
-        HttpSession session = request.getSession(false);
+        HttpServletRequest req = (HttpServletRequest) webRequest.getNativeRequest();
+        HttpSession session = req.getSession(false);
         if (session == null) {
-            return null;
+            return null; // Member 객체 null
         }
 
         return session.getAttribute(SessionConst.LOGIN_MEMBER);
