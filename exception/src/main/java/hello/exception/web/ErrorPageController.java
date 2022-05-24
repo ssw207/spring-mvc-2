@@ -1,11 +1,17 @@
 package hello.exception.web;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -42,5 +48,19 @@ public class ErrorPageController {
         log.info("ERROR_STATUS_CODE: {}", request.getAttribute(ERROR_STATUS_CODE));
 
         log.info("dispatchType={}", request.getDispatcherType());
+    }
+
+    @RequestMapping(value = "/error-page/500", produces = MediaType.APPLICATION_JSON_VALUE) // 클라이언트가 요청하는 Accept 헤더값을 본다
+    public ResponseEntity<Map<String, Object>> errorPage500Api(HttpServletRequest request, HttpServletResponse response) {
+
+        log.info("API errorPage 500");
+
+        Map<String, Object> result = new HashMap<>();
+        Exception ex = (Exception) request.getAttribute(ERROR_EXCEPTION); // 에러 메시지를 세팅
+        result.put("status", request.getAttribute(ERROR_STATUS_CODE)); // 에러코드를 세팅
+        result.put("message", ex.getMessage());
+
+        Integer statusCode = (Integer) request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+        return new ResponseEntity<>(result, HttpStatus.valueOf(statusCode));
     }
 }
