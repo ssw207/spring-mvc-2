@@ -19,7 +19,7 @@ public class UserHandlerExceptionResolver implements HandlerExceptionResolver {
 
     @Override
     public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-
+        log.info("resolver exception");
         try {
             if (ex instanceof UserException) {
                 log.info("UserExceptoin reseolver to 400");
