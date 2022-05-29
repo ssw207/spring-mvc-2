@@ -6,6 +6,7 @@ import hello.exception.exception.UserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -37,6 +38,12 @@ public class ApiExceptionController {
     @GetMapping("/api/response-status-ex2")
     public void statusEx2() {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "error.bad", new IllegalArgumentException()); // 에러코드, 메시지, 에러
+    }
+
+    @GetMapping("/api/default-handler-ex")
+    public String defaultException(@RequestParam Integer data) {
+        // 스프링에서 타입이 잘못되면 DefaultHandlerExceptionResolver에서 500 -> 400에러로 기본적으로 바꿔서 전달한다.
+        return "ok";
     }
 
 }
